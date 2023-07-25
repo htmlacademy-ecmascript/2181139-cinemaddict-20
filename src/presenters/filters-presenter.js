@@ -1,15 +1,9 @@
 import FiltersView from '../views/filters-view.js';
-import { render,remove, replace, RenderPosition } from '../framework/render.js';
+import { render, remove, replace, RenderPosition } from '../framework/render.js';
 import { FilterType } from '../utils/const.js';
+import filter from '../utils/filter.js';
 
-const filter = {
-  [FilterType.ALL]: (films) => films,
-  [FilterType.WATCHLIST]: (films) => films.filter((film) => film.user_details.watchlist),
-  [FilterType.HISTORY]: (films) => films.filter((film) => film.user_details.already_watched),
-  [FilterType.FAVORITE]: (films) => films.filter((film) => film.user_details.favorite),
-};
-
-class FiltersPresenter {
+export default class FiltersPresenter {
   #container = null;
   #filtersModel = null;
   #filmsModel = null;
@@ -66,4 +60,3 @@ class FiltersPresenter {
   };
 }
 
-export { FiltersPresenter, filter };

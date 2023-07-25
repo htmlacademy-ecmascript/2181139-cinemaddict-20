@@ -1,11 +1,8 @@
 import Observable from '../framework/observable.js';
 import { UpdateType } from '../utils/const.js';
-import { filter } from '../presenters/filters-presenter.js';
-
-const PAGE_SIZE = 5;
 
 export default class FilmsModel extends Observable {
-  #nextPage = 1;
+  // #nextPage = 1;
   #films = [];
   #filmsApiService = null;
 
@@ -18,21 +15,21 @@ export default class FilmsModel extends Observable {
     return this.#films;
   }
 
-  getNextFilms(filterType) {
-    const filteredFilms = filter[filterType](this.#films);
-    const remaining = filteredFilms.length - ((this.#nextPage - 1) * PAGE_SIZE);
-    if (remaining <= 0) {
-      return [];
-    }
-    this.#nextPage++;
-    const films = this.#films.slice(0, (this.#nextPage - 1) * PAGE_SIZE);
+  // getNextFilms() {
+  //   const filteredFilms = filter[filterType](this.#films);
+  //   const remaining = filteredFilms.length - ((this.#nextPage - 1) * PAGE_SIZE);
+  //   if (remaining <= 0) {
+  //     return [];
+  //   }
+  //   this.#nextPage++;
+  //   const films = this.#films.slice(0, (this.#nextPage - 1) * PAGE_SIZE);
+  //
+  //   return films;
+  // }
 
-    return films;
-  }
-
-  resetPage() {
-    this.#nextPage = 1;
-  }
+  // resetPage() {
+  //   this.#nextPage = 1;
+  // }
 
   async init() {
     try {

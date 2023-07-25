@@ -1,4 +1,4 @@
-import { FiltersPresenter } from './presenters/filters-presenter.js';
+import FiltersPresenter from './presenters/filters-presenter.js';
 import MainPresenter from './presenters/main-presenter.js';
 import FilmsApiService from './services/api.js';
 import FilmsModel from './models/films-model.js';

@@ -3,9 +3,11 @@ import { render, RenderPosition, remove } from '../framework/render.js';
 import SortView from '../views/sort-view.js';
 import FilmPresenter from './film-presenter.js';
 import ShowMoreButtonView from '../views/show-more-button-view.js';
-import { UpdateType, Mode } from '../utils/const.js';
-import { filter } from './filters-presenter.js';
+import { UpdateType, Mode, SortType } from '../utils/const.js';
+import filter from '../utils/filter.js';
 import FilmsTitleView from '../views/films-title-view.js';
+
+const PAGE_SIZE = 5;
 
 export default class MainPresenter {
   #filmPresenters = new Map(); // <movieId, FilmPresenter>
@@ -20,8 +22,11 @@ export default class MainPresenter {
   #showMoreButtonView = null;
   #profileView = null;
   #filmsTitleView = null;
+  #lastPage = 1;
+  #hasNext = false;
+  #sortType = SortType.DEFAULT;
 
-  constructor({headerContainer, mainContainer, listContainer, filmsModel, filtersModel}) {
+  constructor({ headerContainer, mainContainer, listContainer, filmsModel, filtersModel }) {
     this.#headerContainer = headerContainer;
     this.#mainContainer = mainContainer;
     this.#listContainer = listContainer;
@@ -31,7 +36,6 @@ export default class MainPresenter {
     this.#filmsModel.addObserver(this.#handleFilmsModelEvent);
     this.#filmsModel.init();
     this.#filtersModel.addObserver(this.#handleFiltersModelEvent);
-    // this.#renderLoading();
   }
 
   #renderProfileView() {
@@ -44,12 +48,15 @@ export default class MainPresenter {
   }
 
   #renderMain() {
-    this.#sortView = new SortView();
+    this.#sortView = new SortView({ sortType: this.#sortType, onSortTypeChange: this.#handleSortTypeChange });
     render(this.#sortView, this.#mainContainer, RenderPosition.AFTERBEGIN);
-    this.#showMoreButtonView = new ShowMoreButtonView();
-    render(this.#showMoreButtonView, this.#listContainer, RenderPosition.AFTEREND);
 
     const films = this.films;
+
+    if (this.#hasNext) {
+      this.#showMoreButtonView = new ShowMoreButtonView();
+      render(this.#showMoreButtonView, this.#listContainer, RenderPosition.AFTEREND);
+    }
 
     if (films.length === 0) {
       // case when no movies satisfy filter conditions
@@ -73,25 +80,23 @@ export default class MainPresenter {
   }
 
   get films() {
-    //  filtering
     this.#filterType = this.#filtersModel.filter;
-    const filteredFilms = this.#filmsModel.getNextFilms(this.#filterType);
 
-    //   switch (this.#sortType) {
-    //     case SortType.DAY:
-    //       return filteredPoints.sort((a, b) => Date.parse(a.dateFrom) - Date.parse(b.dateFrom));
-    //     case SortType.TIME:
-    //       return filteredPoints.sort((a, b) => {
-    //         const duration1 = Date.parse(a.dateTo) - Date.parse(a.dateFrom);
-    //         const duration2 = Date.parse(b.dateTo) - Date.parse(b.dateFrom);
-    //         return duration2 - duration1;
-    //       });
-    //     case SortType.PRICE:
-    //       return filteredPoints.sort((a, b) => b.basePrice - a.basePrice);
-    //   }
+    const allFilms = this.#filmsModel.films;
+    const filteredFilms = filter[this.#filterType](allFilms);
+    const displayedFilmsCounter = this.#lastPage * PAGE_SIZE;
+    this.#hasNext = filteredFilms.length - displayedFilmsCounter > 0;
 
-    //   return filteredPoints;
-    return filteredFilms;
+    const displayedFilms = filteredFilms.slice(0, displayedFilmsCounter);
+
+    switch (this.#sortType) {
+      case SortType.DATE:
+        return displayedFilms.sort((a, b) => Date.parse(b.film_info.release.date) - Date.parse(a.film_info.release.date));
+      case SortType.RATING:
+        return displayedFilms.sort((a, b) => b.film_info.total_rating - a.film_info.total_rating);
+      default:
+        return displayedFilms;
+    }
   }
 
   #handleModeChange = (filmId, mode) => {
@@ -107,13 +112,19 @@ export default class MainPresenter {
     this.#filmIdInPopupMode = filmId;
   };
 
+  #handleSortTypeChange = (sortType) => {
+    this.#sortType = sortType;
+    this.#clearBoard();
+    this.#renderMain();
+  };
+
   // updateType: userData changes/comments changes
   #handleFilmsModelEvent = (updateType, film) => {
     switch (updateType) {
       case UpdateType.FILMS_LOADED:
         this.#renderFooter();
         if (this.#filmsModel.films.length === 0) {
-        // show no movies available
+          // show no movies available
         } else {
           this.#renderProfileView();
           this.#renderMain();
@@ -132,6 +143,7 @@ export default class MainPresenter {
     //     break;
     // }
     // this.#filmsModel.resetPage();
+    this.#sortType = SortType.DEFAULT;
     this.#clearBoard();
     this.#renderMain();
   };
