@@ -1,6 +1,26 @@
 import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
+import dayjs from 'dayjs';
+import durationModule from 'dayjs/plugin/duration.js';
+import { calcDuration } from './film-view.js';
+dayjs.extend(durationModule);
 
-function popupTemplate() {
+function popupTemplate(film) {
+  let popupComments = null;
+  if (!film.comments || film.comments.length === 0) {
+    popupComments = '0 comments';
+  } else if (film.comments.length === 1) {
+    popupComments = '1 comment';
+  } else {
+    popupComments = `${film.comments.length} comments`;
+  }
+
+  const genres = film.film_info.genre;
+  let genresAmount = null;
+  if (genres.length === 1){
+    genresAmount = 'Genre';
+  } else {
+    genresAmount = 'Genres';
+  }
   return `<section class="film-details">
   <div class="film-details__inner">
     <div class="film-details__top-container">
@@ -9,73 +29,72 @@ function popupTemplate() {
       </div>
       <div class="film-details__info-wrap">
         <div class="film-details__poster">
-          <img class="film-details__poster-img" src="./images/posters/the-great-flamarion.jpg" alt="">
+          <img class="film-details__poster-img" src="${film.film_info.poster}" alt="">
 
-          <p class="film-details__age">18+</p>
+          <p class="film-details__age">${film.film_info.age_rating}+</p>
         </div>
 
         <div class="film-details__info">
           <div class="film-details__info-head">
             <div class="film-details__title-wrap">
-              <h3 class="film-details__title">The Great Flamarion</h3>
-              <p class="film-details__title-original">Original: The Great Flamarion</p>
+              <h3 class="film-details__title"> ${film.film_info.title}</h3>
+              <p class="film-details__title-original">Original: ${film.film_info.alternative_title}</p>
             </div>
 
             <div class="film-details__rating">
-              <p class="film-details__total-rating">8.9</p>
+              <p class="film-details__total-rating">${film.film_info.total_rating}</p>
             </div>
           </div>
 
           <table class="film-details__table">
             <tr class="film-details__row">
               <td class="film-details__term">Director</td>
-              <td class="film-details__cell">Anthony Mann</td>
+              <td class="film-details__cell">${film.film_info.director}</td>
             </tr>
             <tr class="film-details__row">
               <td class="film-details__term">Writers</td>
-              <td class="film-details__cell">Anne Wigton, Heinz Herald, Richard Weil</td>
+              <td class="film-details__cell">${film.film_info.writers.join(', ')}</td>
             </tr>
             <tr class="film-details__row">
               <td class="film-details__term">Actors</td>
-              <td class="film-details__cell">Erich von Stroheim, Mary Beth Hughes, Dan Duryea</td>
+              <td class="film-details__cell">${film.film_info.actors.join(', ')}</td>
             </tr>
             <tr class="film-details__row">
               <td class="film-details__term">Release Date</td>
-              <td class="film-details__cell">30 March 1945</td>
+              <td class="film-details__cell">${dayjs(film.film_info.release.date).format('DD MMMM YYYY')}</td>
             </tr>
             <tr class="film-details__row">
               <td class="film-details__term">Duration</td>
-              <td class="film-details__cell">1h 18m</td>
+              <td class="film-details__cell">${calcDuration(film.film_info.duration)}</td>
             </tr>
             <tr class="film-details__row">
               <td class="film-details__term">Country</td>
-              <td class="film-details__cell">USA</td>
+              <td class="film-details__cell">${film.film_info.release.release_country}</td>
             </tr>
             <tr class="film-details__row">
-              <td class="film-details__term">Genres</td>
+              <td class="film-details__term">${genresAmount}</td>
               <td class="film-details__cell">
-                <span class="film-details__genre">Drama</span>
-                <span class="film-details__genre">Film-Noir</span>
-                <span class="film-details__genre">Mystery</span></td>
+              ${genres.map((genre) =>
+    `<span class="film-details__genre">${genre}</span>`)}</td>
             </tr>
           </table>
 
           <p class="film-details__film-description">
-            The film opens following a murder at a cabaret in Mexico City in 1936, and then presents the events leading up to it in flashback. The Great Flamarion (Erich von Stroheim) is an arrogant, friendless, and misogynous marksman who displays his trick gunshot act in the vaudeville circuit. His show features a beautiful assistant, Connie (Mary Beth Hughes) and her drunken husband Al (Dan Duryea), Flamarion's other assistant. Flamarion falls in love with Connie, the movie's femme fatale, and is soon manipulated by her into killing her no good husband during one of their acts.
+          ${film.film_info.description}
           </p>
         </div>
       </div>
 
       <section class="film-details__controls">
-        <button type="button" class="film-details__control-button film-details__control-button--watchlist" id="watchlist" name="watchlist">Add to watchlist</button>
-        <button type="button" class="film-details__control-button film-details__control-button--active film-details__control-button--watched" id="watched" name="watched">Already watched</button>
-        <button type="button" class="film-details__control-button film-details__control-button--favorite" id="favorite" name="favorite">Add to favorites</button>
+        <button type="button" class="film-details__control-button ${film.user_details.watchlist && 'film-details__control-button--watchlist'}" id="watchlist" name="watchlist">Add to watchlist</button>
+        <button type="button" class="film-details__control-button film-details__control-button--active ${film.user_details.already_watched && 'film-details__control-button--watched'}" id="watched" name="watched">Already watched</button>
+        <button type="button" class="film-details__control-button ${film.user_details.favorite && 'film-details__control-button--favorite'}" id="favorite" name="favorite">Add to favorites</button>
       </section>
     </div>
 
     <div class="film-details__bottom-container">
       <section class="film-details__comments-wrap">
-        <h3 class="film-details__comments-title">Comments <span class="film-details__comments-count">4</span></h3>
+        <h3 class="film-details__comments-title"><span class="film-details__comments-count">${popupComments}</span></h3>
 
         <ul class="film-details__comments-list">
           <li class="film-details__comment">
@@ -168,8 +187,36 @@ function popupTemplate() {
 }
 
 export default class PopupView extends AbstractStatefulView {
+  #film = null;
+  #onCloseBtnClick = null;
+
+  constructor({ film, onCloseBtnClick }) {
+    super();
+    this.#film = film;
+    this.#onCloseBtnClick = onCloseBtnClick;
+    this.#initListeners();
+  }
 
   get template() {
-    return popupTemplate();
+    return popupTemplate(this.#film);
   }
+
+  #initListeners() {
+    this.element.querySelector('.film-details__close-btn').addEventListener('click', this.#handleCloseBtnClick);
+  }
+
+  #handleCloseBtnClick = (evt) => {
+    evt.preventDefault();
+    this.#onCloseBtnClick(evt);
+  };
 }
+// function closePopup() {
+//  const closeBtn = template.querySelector('.film-details__close-btn');
+//  closeBtn.addEventListener('click'){
+
+//  }
+// #closeClickHandler = (evt) => {
+//   evt.preventDefault();
+//   this.#handleEditClick();
+// };
+
