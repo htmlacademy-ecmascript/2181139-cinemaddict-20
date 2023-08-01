@@ -5,8 +5,21 @@ function showMoreButtonTemplate() {
 }
 
 export default class ShowMoreButtonView extends AbstractStatefulView {
+  #onBtnClick = null;
+
+  constructor(onBtnClick){
+    super();
+    this.#onBtnClick = onBtnClick;
+    this.element.addEventListener('click', this.#handleBtnClick);
+  }
+
   get template() {
     return showMoreButtonTemplate();
   }
+
+  #handleBtnClick = (evt) => {
+    evt.preventDefault();
+    this.#onBtnClick();
+  };
 
 }

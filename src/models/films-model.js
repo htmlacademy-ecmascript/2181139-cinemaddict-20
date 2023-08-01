@@ -15,22 +15,6 @@ export default class FilmsModel extends Observable {
     return this.#films;
   }
 
-  // getNextFilms() {
-  //   const filteredFilms = filter[filterType](this.#films);
-  //   const remaining = filteredFilms.length - ((this.#nextPage - 1) * PAGE_SIZE);
-  //   if (remaining <= 0) {
-  //     return [];
-  //   }
-  //   this.#nextPage++;
-  //   const films = this.#films.slice(0, (this.#nextPage - 1) * PAGE_SIZE);
-  //
-  //   return films;
-  // }
-
-  // resetPage() {
-  //   this.#nextPage = 1;
-  // }
-
   async init() {
     try {
       this.#films = await this.#filmsApiService.films;
@@ -40,12 +24,52 @@ export default class FilmsModel extends Observable {
     this._notify(UpdateType.FILMS_LOADED);
   }
 
-  // userData/comment
-  async update(updateType, updatedFilm) {
+  async initComments(movieId) {
+    const index = this.#films.findIndex((film) => film.id === movieId);
+    if (index === -1) {
+      throw new Error('Can\'t find unexisting film');
+    }
+    let updatedFilm = this.#films[index];
+    try {
+      const comments = await this.#filmsApiService.fetchComments(movieId);
+      updatedFilm = {
+        ...this.#films[index],
+        comments: comments.map((comment) => comment.id),
+        detailedComments: comments
+      };
+      this.#films = [
+        ...this.#films.slice(0, index),
+        updatedFilm,
+        ...this.#films.slice(index + 1),
+      ];
 
+    } catch (err) {
+      this.#films = [];
+    }
+    this._notify(UpdateType.COMMENTS_LOADED, updatedFilm);
   }
 
-  async getComments(movieId) {
+  // userData/comment
+  async update(updateType, updatedFilm) {
+    const payload = { ...updatedFilm };
+    delete payload.detailedComments;
+    const index = this.#films.findIndex((film) => film.id === payload.id);
 
+    if (index === -1) {
+      throw new Error('Can\'t update unexisting film');
+    }
+
+    try {
+      const response = await this.#filmsApiService.updateFilm(payload);
+      // const point = this.#ApiService.transformPointForClient(response);
+      this.#films = [
+        ...this.#films.slice(0, index),
+        response,
+        ...this.#films.slice(index + 1),
+      ];
+      this._notify(updateType, { ...response, detailedComments: updatedFilm.detailedComments });
+    } catch (err) {
+      throw new Error('Can\'t update film');
+    }
   }
 }

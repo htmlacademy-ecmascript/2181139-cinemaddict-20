@@ -1,5 +1,9 @@
 const UpdateType = {
-  FILMS_LOADED: 'FILMS_LOADED'
+  FILMS_LOADED: 'FILMS_LOADED',
+  COMMENTS_LOADED: 'COMMENTS_LOADED',
+  FAVORITE: 'FAVORITE',
+  HISTORY: 'HISTORY',
+  WATCHLIST: 'WATCHLIST'
 };
 
 const Mode = {
@@ -20,4 +24,9 @@ const SortType = {
   RATING: 'RATING'
 };
 
-export { UpdateType, Mode, FilterType, SortType };
+const UserAction = {
+  UPDATE_FILM: 'UPDATE_FILM'
+};
+
+
+export { UpdateType, Mode, FilterType, SortType, UserAction };

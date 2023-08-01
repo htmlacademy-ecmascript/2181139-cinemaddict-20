@@ -83,22 +83,22 @@ export default class FilmView extends AbstractStatefulView {
   }
 
   #handlePopupClick = (evt) => {
-    evt.preventDefault();
+    evt.stopPropagation();
     this.#onPopupClick();
   };
 
   #handleWatchlistBtn = (evt) => {
-    evt.preventDefault();
+    evt.stopPropagation();
     this.#onWatchlistClick();
   };
 
   #handleWatchedBtn = (evt) => {
-    evt.preventDefault();
+    evt.stopPropagation();
     this.#onWatchedClick();
   };
 
   #handleFavoriteBtn = (evt) => {
-    evt.preventDefault();
+    evt.stopPropagation();
     this.#onFavoriteClick();
   };
 }

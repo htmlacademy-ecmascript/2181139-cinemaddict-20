@@ -4,6 +4,27 @@ import durationModule from 'dayjs/plugin/duration.js';
 import { calcDuration } from './film-view.js';
 dayjs.extend(durationModule);
 
+function commentsTemplate(detailedComments) {
+  if (!detailedComments) {
+    return '';
+  }
+  const comments = detailedComments.map((comment) => `<li class="film-details__comment">
+    <span class="film-details__comment-emoji">
+      <img src="./images/emoji/${comment.emotion}.png" width="55" height="55" alt="emoji-smile">
+    </span>
+    <div>
+      <p class="film-details__comment-text">${comment.comment}</p>
+      <p class="film-details__comment-info">
+        <span class="film-details__comment-author">${comment.author}</span>
+        <span class="film-details__comment-day">${dayjs(comment.date).format('YYYY/MM/DD HH:mm')}</span>
+        <button class="film-details__comment-delete">Delete</button>
+      </p>
+    </div>
+  </li>`).join('');
+
+  return `<ul class="film-details__comments-list">${comments}</ul>`;
+}
+
 function popupTemplate(film) {
   let popupComments = null;
   if (!film.comments || film.comments.length === 0) {
@@ -16,7 +37,7 @@ function popupTemplate(film) {
 
   const genres = film.film_info.genre;
   let genresAmount = null;
-  if (genres.length === 1){
+  if (genres.length === 1) {
     genresAmount = 'Genre';
   } else {
     genresAmount = 'Genres';
@@ -86,70 +107,16 @@ function popupTemplate(film) {
       </div>
 
       <section class="film-details__controls">
-        <button type="button" class="film-details__control-button ${film.user_details.watchlist && 'film-details__control-button--watchlist'}" id="watchlist" name="watchlist">Add to watchlist</button>
-        <button type="button" class="film-details__control-button film-details__control-button--active ${film.user_details.already_watched && 'film-details__control-button--watched'}" id="watched" name="watched">Already watched</button>
-        <button type="button" class="film-details__control-button ${film.user_details.favorite && 'film-details__control-button--favorite'}" id="favorite" name="favorite">Add to favorites</button>
+        <button type="button" class="film-details__control-button film-details__control-button--watchlist ${film.user_details.watchlist && 'film-details__control-button--active'}" id="watchlist" name="watchlist">Add to watchlist</button>
+        <button type="button" class="film-details__control-button film-details__control-button--watched ${film.user_details.already_watched && 'film-details__control-button--active'}" id="watched" name="watched">Already watched</button>
+        <button type="button" class="film-details__control-button film-details__control-button--favorite ${film.user_details.favorite && 'film-details__control-button--active'}" id="favorite" name="favorite">Add to favorites</button>
       </section>
     </div>
 
     <div class="film-details__bottom-container">
       <section class="film-details__comments-wrap">
         <h3 class="film-details__comments-title"><span class="film-details__comments-count">${popupComments}</span></h3>
-
-        <ul class="film-details__comments-list">
-          <li class="film-details__comment">
-            <span class="film-details__comment-emoji">
-              <img src="./images/emoji/smile.png" width="55" height="55" alt="emoji-smile">
-            </span>
-            <div>
-              <p class="film-details__comment-text">Interesting setting and a good cast</p>
-              <p class="film-details__comment-info">
-                <span class="film-details__comment-author">Tim Macoveev</span>
-                <span class="film-details__comment-day">2019/12/31 23:59</span>
-                <button class="film-details__comment-delete">Delete</button>
-              </p>
-            </div>
-          </li>
-          <li class="film-details__comment">
-            <span class="film-details__comment-emoji">
-              <img src="./images/emoji/sleeping.png" width="55" height="55" alt="emoji-sleeping">
-            </span>
-            <div>
-              <p class="film-details__comment-text">Booooooooooring</p>
-              <p class="film-details__comment-info">
-                <span class="film-details__comment-author">John Doe</span>
-                <span class="film-details__comment-day">2 days ago</span>
-                <button class="film-details__comment-delete">Delete</button>
-              </p>
-            </div>
-          </li>
-          <li class="film-details__comment">
-            <span class="film-details__comment-emoji">
-              <img src="./images/emoji/puke.png" width="55" height="55" alt="emoji-puke">
-            </span>
-            <div>
-              <p class="film-details__comment-text">Very very old. Meh</p>
-              <p class="film-details__comment-info">
-                <span class="film-details__comment-author">John Doe</span>
-                <span class="film-details__comment-day">2 days ago</span>
-                <button class="film-details__comment-delete">Delete</button>
-              </p>
-            </div>
-          </li>
-          <li class="film-details__comment">
-            <span class="film-details__comment-emoji">
-              <img src="./images/emoji/angry.png" width="55" height="55" alt="emoji-angry">
-            </span>
-            <div>
-              <p class="film-details__comment-text">Almost two hours? Seriously?</p>
-              <p class="film-details__comment-info">
-                <span class="film-details__comment-author">John Doe</span>
-                <span class="film-details__comment-day">Today</span>
-                <button class="film-details__comment-delete">Delete</button>
-              </p>
-            </div>
-          </li>
-        </ul>
+        ${commentsTemplate(film.detailedComments)}
 
         <form class="film-details__new-comment" action="" method="get">
           <div class="film-details__add-emoji-label"></div>
@@ -189,11 +156,17 @@ function popupTemplate(film) {
 export default class PopupView extends AbstractStatefulView {
   #film = null;
   #onCloseBtnClick = null;
+  #onWatchlistClick = null;
+  #onWatchedClick = null;
+  #onFavoriteClick = null;
 
-  constructor({ film, onCloseBtnClick }) {
+  constructor({ film, onCloseBtnClick, onWatchlistClick, onWatchedClick, onFavoriteClick }) {
     super();
     this.#film = film;
     this.#onCloseBtnClick = onCloseBtnClick;
+    this.#onWatchlistClick = onWatchlistClick;
+    this.#onWatchedClick = onWatchedClick;
+    this.#onFavoriteClick = onFavoriteClick;
     this.#initListeners();
   }
 
@@ -203,20 +176,29 @@ export default class PopupView extends AbstractStatefulView {
 
   #initListeners() {
     this.element.querySelector('.film-details__close-btn').addEventListener('click', this.#handleCloseBtnClick);
+    this.element.querySelector('.film-details__control-button--watchlist').addEventListener('click', this.#handleWatchlistBtn);
+    this.element.querySelector('.film-details__control-button--watched').addEventListener('click', this.#handleWatchedBtn);
+    this.element.querySelector('.film-details__control-button--favorite').addEventListener('click', this.#handleFavoriteBtn);
   }
 
   #handleCloseBtnClick = (evt) => {
     evt.preventDefault();
     this.#onCloseBtnClick(evt);
   };
-}
-// function closePopup() {
-//  const closeBtn = template.querySelector('.film-details__close-btn');
-//  closeBtn.addEventListener('click'){
 
-//  }
-// #closeClickHandler = (evt) => {
-//   evt.preventDefault();
-//   this.#handleEditClick();
-// };
+  #handleWatchlistBtn = (evt) => {
+    evt.stopPropagation();
+    this.#onWatchlistClick();
+  };
+
+  #handleWatchedBtn = (evt) => {
+    evt.stopPropagation();
+    this.#onWatchedClick();
+  };
+
+  #handleFavoriteBtn = (evt) => {
+    evt.stopPropagation();
+    this.#onFavoriteClick();
+  };
+}
 
