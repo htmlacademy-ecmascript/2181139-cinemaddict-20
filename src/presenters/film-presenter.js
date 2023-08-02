@@ -16,7 +16,7 @@ export default class FilmPresenter {
   #onModeChange = null;
   #handleDataChange = null;
 
-  constructor({container, onModeChange, onDataChange}) {
+  constructor({ container, onModeChange, onDataChange }) {
     this.#container = container;
     this.#onModeChange = onModeChange;
     this.#handleDataChange = onDataChange;
@@ -28,8 +28,8 @@ export default class FilmPresenter {
     const prevFilmView = this.#filmView;
     const prevPopupView = this.#popupView;
 
-    this.#filmView = new FilmView({ film, onPopupClick: this.#handlePopupClick, onWatchlistClick: this.#handleWatchlistClick, onWatchedClick: this.#handleWatchClick, onFavoriteClick: this.#handleFavoriteClick});
-    this.#popupView = new PopupView({ film, onCloseBtnClick: this.#handlePopupClose, onWatchlistClick: this.#handleWatchlistClick, onWatchedClick: this.#handleWatchClick, onFavoriteClick: this.#handleFavoriteClick});
+    this.#filmView = new FilmView({ film, onPopupClick: this.#handlePopupClick, onWatchlistClick: this.#handleWatchlistClick, onWatchedClick: this.#handleWatchClick, onFavoriteClick: this.#handleFavoriteClick });
+    this.#popupView = new PopupView({ film, onCloseBtnClick: this.#handlePopupClose, onWatchlistClick: this.#handleWatchlistClick, onWatchedClick: this.#handleWatchClick, onFavoriteClick: this.#handleFavoriteClick });
 
     if (prevFilmView === null) {
       render(this.#filmView, this.#container);
@@ -50,14 +50,15 @@ export default class FilmPresenter {
   }
 
   #handlePopupClick = () => {
-    this.switchToPopup();
+    this.#onModeChange(this.#film.id, Mode.POPUP);
   };
 
   #handleWatchlistClick = () => {
     this.#handleDataChange(
       UserAction.UPDATE_FILM,
       UpdateType.WATCHLIST,
-      { ...this.#film,
+      {
+        ...this.#film,
         'user_details': {
           ...this.#film.user_details,
           watchlist: !this.#film.user_details.watchlist
@@ -71,7 +72,8 @@ export default class FilmPresenter {
     this.#handleDataChange(
       UserAction.UPDATE_FILM,
       UpdateType.HISTORY,
-      { ...this.#film,
+      {
+        ...this.#film,
         'user_details': {
           ...this.#film.user_details,
           'already_watched': !this.#film.user_details.already_watched
@@ -84,7 +86,8 @@ export default class FilmPresenter {
     this.#handleDataChange(
       UserAction.UPDATE_FILM,
       UpdateType.FAVORITE,
-      { ...this.#film,
+      {
+        ...this.#film,
         'user_details': {
           ...this.#film.user_details,
           favorite: !this.#film.user_details.favorite
@@ -97,20 +100,18 @@ export default class FilmPresenter {
     if (evt.type === 'keyup' && evt.key !== 'Escape') {
       return;
     }
-    this.switchToGallery();
+    this.#onModeChange(this.#film.id, Mode.GALLERY);
   };
 
   switchToGallery = () => {
     remove(this.#popupView);
     this.#mode = Mode.GALLERY;
-    this.#onModeChange(this.#film.id, Mode.GALLERY);
     document.removeEventListener('keyup', this.#handlePopupClose);
   };
 
   switchToPopup() {
     render(this.#popupView, document.querySelector('footer'), RenderPosition.AFTEREND);
     this.#mode = Mode.POPUP;
-    this.#onModeChange(this.#film.id, Mode.POPUP);
     document.addEventListener('keyup', this.#handlePopupClose);
   }
 

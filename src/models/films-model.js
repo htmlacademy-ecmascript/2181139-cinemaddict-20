@@ -2,7 +2,6 @@ import Observable from '../framework/observable.js';
 import { UpdateType } from '../utils/const.js';
 
 export default class FilmsModel extends Observable {
-  // #nextPage = 1;
   #films = [];
   #filmsApiService = null;
 
