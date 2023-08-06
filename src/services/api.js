@@ -15,4 +15,13 @@ export default class FilmsApiService extends ApiService{
     return this._load({method: 'GET', url: `cinemaddict/comments/${movieId}`, headers: new Headers({ 'Content-Type': 'application/json'})})
       .then(ApiService.parseResponse);
   }
+
+  postComment(comment) {
+    const commentBody = { ...comment };
+    delete commentBody.filmId;
+    delete commentBody.isDeleting;
+    return this._load({method: 'POST', url: `cinemaddict/comments/${comment.filmId}`, headers: new Headers({ 'Content-Type': 'application/json'}), body: JSON.stringify(commentBody)})
+      .then(ApiService.parseResponse);
+  }
 }
+

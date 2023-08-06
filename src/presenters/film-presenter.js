@@ -29,7 +29,7 @@ export default class FilmPresenter {
     const prevPopupView = this.#popupView;
 
     this.#filmView = new FilmView({ film, onPopupClick: this.#handlePopupClick, onWatchlistClick: this.#handleWatchlistClick, onWatchedClick: this.#handleWatchClick, onFavoriteClick: this.#handleFavoriteClick });
-    this.#popupView = new PopupView({ film, onCloseBtnClick: this.#handlePopupClose, onWatchlistClick: this.#handleWatchlistClick, onWatchedClick: this.#handleWatchClick, onFavoriteClick: this.#handleFavoriteClick });
+    this.#popupView = new PopupView({ film, onCloseBtnClick: this.#handlePopupClose, onWatchlistClick: this.#handleWatchlistClick, onWatchedClick: this.#handleWatchClick, onFavoriteClick: this.#handleFavoriteClick, onFormSubmit: this.#handleFormSubmit });
 
     if (prevFilmView === null) {
       render(this.#filmView, this.#container);
@@ -41,7 +41,9 @@ export default class FilmPresenter {
       if (prevPopupView === null) {
         render(this.#popupView, this.#container);
       } else {
+        const scroll = prevPopupView.element.scrollTop;
         replace(this.#popupView, prevPopupView);
+        this.#popupView.element.scrollTop = scroll;
       }
     }
 
@@ -51,6 +53,15 @@ export default class FilmPresenter {
 
   #handlePopupClick = () => {
     this.#onModeChange(this.#film.id, Mode.POPUP);
+  };
+
+  #handleFormSubmit = async (comment) => {
+    comment.filmId = this.#film.id;
+    await this.#handleDataChange(
+      UserAction.UPDATE_COMMENT,
+      UpdateType.COMMENT_SUBMITTED,
+      comment);
+    // this.switchToPointView();
   };
 
   #handleWatchlistClick = () => {
@@ -113,6 +124,19 @@ export default class FilmPresenter {
     render(this.#popupView, document.querySelector('footer'), RenderPosition.AFTEREND);
     this.#mode = Mode.POPUP;
     document.addEventListener('keyup', this.#handlePopupClose);
+  }
+
+  handleError() {
+    if (this.#mode === Mode.POPUP) {
+      this.#popupView.shake(() => {
+        // this.#editPointView.updateElement({
+        //   isSaving: false,
+        //   isDeleting: false,
+        // });
+      }, '.film-details__controls');
+    } else {
+      this.#filmView.shake(() => {});
+    }
   }
 
   destroy() {

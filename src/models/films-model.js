@@ -48,7 +48,6 @@ export default class FilmsModel extends Observable {
     this._notify(UpdateType.COMMENTS_LOADED, updatedFilm);
   }
 
-  // userData/comment
   async update(updateType, updatedFilm) {
     const payload = { ...updatedFilm };
     delete payload.detailedComments;
@@ -70,5 +69,32 @@ export default class FilmsModel extends Observable {
     } catch (err) {
       throw new Error('Can\'t update film');
     }
+  }
+
+  async updateComment(updateType, comment) {
+    let updatedFilm;
+    try {
+      const { movie, comments: updatedComments } = await this.#filmsApiService.postComment(comment);
+      const index = this.#films.findIndex((film) => film.id === movie.id);
+      if (index === -1) {
+        throw new Error('Can\'t find unexisting film');
+      }
+      updatedFilm = this.#films[index];
+      updatedFilm = {
+        ...this.#films[index],
+        ...movie,
+        comments: updatedComments.map((c) => c.id),
+        detailedComments: updatedComments
+      };
+      this.#films = [
+        ...this.#films.slice(0, index),
+        updatedFilm,
+        ...this.#films.slice(index + 1),
+      ];
+
+    } catch (err) {
+      this.#films = [];
+    }
+    this._notify(UpdateType.COMMENTS_LOADED, updatedFilm);
   }
 }

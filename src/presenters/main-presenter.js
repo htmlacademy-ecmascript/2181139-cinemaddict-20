@@ -7,8 +7,14 @@ import { UpdateType, Mode, SortType, UserAction, FilterType } from '../utils/con
 import filter from '../utils/filter.js';
 import FilmsTitleView from '../views/films-title-view.js';
 import LoadingView from '../views/loading-view.js';
+import FooterView from '../views/footer-view.js';
+import UiBlocker from '../framework/ui-blocker/ui-blocker.js';
 
 const PAGE_SIZE = 5;
+const TimeLimit = {
+  LOWER_LIMIT: 350,
+  UPPER_LIMIT: 1000,
+};
 
 export default class MainPresenter {
   #filmPresenters = new Map(); // <movieId, FilmPresenter>
@@ -29,6 +35,11 @@ export default class MainPresenter {
   #loadingView = new LoadingView();
   #displayedFilms = [];
 
+  #uiBlocker = new UiBlocker({
+    lowerLimit: TimeLimit.LOWER_LIMIT,
+    upperLimit: TimeLimit.UPPER_LIMIT
+  });
+
   constructor({ headerContainer, mainContainer, listContainer, filmsModel, filtersModel }) {
     this.#headerContainer = headerContainer;
     this.#mainContainer = mainContainer;
@@ -44,12 +55,19 @@ export default class MainPresenter {
   }
 
   #renderProfileView() {
-    this.#profileView = new ProfileView();
-    render(this.#profileView, this.#headerContainer);
+    const allFilms = this.#filmsModel.films;
+    const prevProfileView = this.#profileView;
+    this.#profileView = new ProfileView(filter[FilterType.HISTORY](allFilms).length);
+    if (prevProfileView === null){
+      render(this.#profileView, this.#headerContainer);
+    } else {
+      replace(this.#profileView, prevProfileView);
+    }
   }
 
   #renderFooter() {
-    // TODO
+    const footer = new FooterView(this.#filmsModel.films.length);
+    render(footer, document.querySelector('.footer__statistics'));
   }
 
   #renderMain() {
@@ -122,27 +140,32 @@ export default class MainPresenter {
     }
   }
 
-  #handleViewAction = async (userAction, updateType, updatedFilm) => {
-    // this.#uiBlocker.block();
-
+  #handleViewAction = async (userAction, updateType, payload) => {
+    let filmId;
+    this.#uiBlocker.block();
     try {
       switch (userAction) {
         case UserAction.UPDATE_FILM:
+          filmId = payload.id;
           // this.#filmPresenters.get(updatedFilm.id).setSaving();
-          await this.#filmsModel.update(updateType, updatedFilm);
+          await this.#filmsModel.update(updateType, payload);
+          break;
+        case UserAction.UPDATE_COMMENT:
+          filmId = payload.filmId;
+          await this.#filmsModel.updateComment(updateType, payload);
           break;
       }
     } catch (err) {
-      // this.#filmPresenters.get(updatedFilm.id).handleError();
-      console.log(err);
+      this.#filmPresenters.get(filmId).handleError();
       throw err;
     } finally {
-      // this.#uiBlocker.unblock();
+      this.#uiBlocker.unblock();
     }
   };
 
   #handleModeChange = (filmId, mode) => {
     if (mode === Mode.GALLERY) {
+      document.querySelector('body').classList.remove('hide-overflow');
       this.#filmPresenters.get(filmId).switchToGallery();
       this.#filmIdInPopupMode = null;
       return;
@@ -154,6 +177,7 @@ export default class MainPresenter {
     }
 
     if (filmId !== this.#filmIdInPopupMode) {
+      document.querySelector('body').classList.add('hide-overflow');
       this.#filmPresenters.get(filmId).switchToPopup();
       this.#filmIdInPopupMode = filmId;
     } else {
@@ -187,6 +211,7 @@ export default class MainPresenter {
         } else {
           filmPresenter.init(film);
         }
+        this.#renderProfileView();
         break;
       case UpdateType.WATCHLIST:
         filmPresenter = this.#filmPresenters.get(film.id);

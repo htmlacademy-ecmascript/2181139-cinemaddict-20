@@ -25,7 +25,7 @@ function commentsTemplate(detailedComments) {
   return `<ul class="film-details__comments-list">${comments}</ul>`;
 }
 
-function popupTemplate(film) {
+function popupTemplate(film, state) {
   let popupComments = null;
   if (!film.comments || film.comments.length === 0) {
     popupComments = '0 comments';
@@ -119,10 +119,11 @@ function popupTemplate(film) {
         ${commentsTemplate(film.detailedComments)}
 
         <form class="film-details__new-comment" action="" method="get">
-          <div class="film-details__add-emoji-label"></div>
+          <div class="film-details__add-emoji-label">${state.emotion ? `<img src="./images/emoji/${state.emotion}.png" width="30" height="30" alt="emoji">` : ''}
+          </div>
 
           <label class="film-details__comment-label">
-            <textarea class="film-details__comment-input" placeholder="Select reaction below and write comment here" name="comment"></textarea>
+            <textarea class="film-details__comment-input" placeholder="Select reaction below and write comment here" name="comment">${state.comment ? state.comment : ''}</textarea>
           </label>
 
           <div class="film-details__emoji-list">
@@ -159,31 +160,85 @@ export default class PopupView extends AbstractStatefulView {
   #onWatchlistClick = null;
   #onWatchedClick = null;
   #onFavoriteClick = null;
+  #handleFormSubmit = null;
 
-  constructor({ film, onCloseBtnClick, onWatchlistClick, onWatchedClick, onFavoriteClick }) {
+  constructor({ film, onCloseBtnClick, onWatchlistClick, onWatchedClick, onFavoriteClick, onFormSubmit }) {
     super();
     this.#film = film;
     this.#onCloseBtnClick = onCloseBtnClick;
     this.#onWatchlistClick = onWatchlistClick;
     this.#onWatchedClick = onWatchedClick;
     this.#onFavoriteClick = onFavoriteClick;
-    this.#initListeners();
+    this.#handleFormSubmit = onFormSubmit;
+    this._restoreHandlers();
+    this._state = {
+      isDeleting: false
+    };
   }
 
   get template() {
-    return popupTemplate(this.#film);
+    return popupTemplate(this.#film, this._state);
   }
 
-  #initListeners() {
+  _restoreHandlers() {
     this.element.querySelector('.film-details__close-btn').addEventListener('click', this.#handleCloseBtnClick);
     this.element.querySelector('.film-details__control-button--watchlist').addEventListener('click', this.#handleWatchlistBtn);
     this.element.querySelector('.film-details__control-button--watched').addEventListener('click', this.#handleWatchedBtn);
     this.element.querySelector('.film-details__control-button--favorite').addEventListener('click', this.#handleFavoriteBtn);
+    this.element.querySelector('form').addEventListener('change', this.#handleFormChange);
+    this.element.querySelector('.film-details__comment-input').addEventListener('keyup', this.#handleCmdEnter);
+    // this.element.querySelector('form').addEventListener('submit', (evt) => {
+    //   evt.preventDefault();
+    //   // delete this._state.isDeleting;
+    //   // delete this._state.isSaving;
+
+    //   this.#handleFormSubmit(this._state);
+    // });
   }
+
+  #handleCmdEnter = (evt) => {
+    if (!this._state.emotion) {
+      return;
+    }
+    if (evt.type === 'keyup' && evt.returnValue && evt.key === 'Meta') {
+      const form = this.element.querySelector('form');
+      const formData = new FormData(form);
+      const comment = formData.get('comment');
+      this._setState({
+        comment
+      });
+      // form.submit();
+      this.#handleFormSubmit(this._state);
+    }
+  };
+
+  #handleFormChange = (evt) => {
+    evt.preventDefault();
+    const form = this.element.querySelector('form');
+    const formData = new FormData(form);
+    const emotion = formData.get('comment-emoji');
+    const comment = formData.get('comment');
+
+    if (this._state.emotion === emotion) {
+      this._setState({
+        comment
+      });
+      return;
+    }
+
+    const scroll = this.element.scrollTop;
+    this.updateElement({
+      ...this._state,
+      emotion,
+      comment
+    });
+    this.element.scrollTop = scroll;
+  };
 
   #handleCloseBtnClick = (evt) => {
     evt.preventDefault();
     this.#onCloseBtnClick(evt);
+
   };
 
   #handleWatchlistBtn = (evt) => {
