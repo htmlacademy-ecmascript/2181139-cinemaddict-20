@@ -12,7 +12,7 @@ export default class SortView extends AbstractStatefulView {
   #sortType = null;
   #onSortTypeChange = null;
 
-  constructor({sortType, onSortTypeChange}) {
+  constructor({ sortType, onSortTypeChange }) {
     super();
     this.#sortType = sortType;
     this.#onSortTypeChange = onSortTypeChange;

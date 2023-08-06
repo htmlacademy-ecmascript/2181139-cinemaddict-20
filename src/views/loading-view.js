@@ -6,7 +6,7 @@ function loadingTemplate() {
 
 export default class LoadingView extends AbstractStatefulView {
 
-  constructor(){
+  constructor() {
     super();
   }
 

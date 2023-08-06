@@ -68,14 +68,14 @@ export default class FilmView extends AbstractStatefulView {
     this.#onWatchedClick = onWatchedClick;
     this.#onFavoriteClick = onFavoriteClick;
     this.#onPopupClick = onPopupClick;
-    this.#setListeners();
+    this._restoreHandlers();
   }
 
   get template() {
     return filmTemplate(this.#film);
   }
 
-  #setListeners() {
+  _restoreHandlers() {
     this.element.querySelector('.film-card__controls-item--add-to-watchlist').addEventListener('click', this.#handleWatchlistBtn);
     this.element.querySelector('.film-card__controls-item--mark-as-watched').addEventListener('click', this.#handleWatchedBtn);
     this.element.querySelector('.film-card__controls-item--favorite').addEventListener('click', this.#handleFavoriteBtn);
@@ -103,4 +103,4 @@ export default class FilmView extends AbstractStatefulView {
   };
 }
 
-export {calcDuration};
+export { calcDuration };

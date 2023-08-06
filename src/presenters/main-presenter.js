@@ -54,11 +54,31 @@ export default class MainPresenter {
     render(this.#loadingView, this.#listContainer, RenderPosition.BEFOREBEGIN);
   }
 
+  get films() {
+    this.#filterType = this.#filtersModel.filter;
+
+    const allFilms = this.#filmsModel.films;
+    const filteredFilms = filter[this.#filterType](allFilms);
+    const displayedFilmsCounter = this.#lastPage * PAGE_SIZE;
+    this.#hasNext = filteredFilms.length > displayedFilmsCounter;
+
+    const displayedFilms = filteredFilms.slice(0, displayedFilmsCounter);
+
+    switch (this.#sortType) {
+      case SortType.DATE:
+        return displayedFilms.sort((a, b) => Date.parse(b.film_info.release.date) - Date.parse(a.film_info.release.date));
+      case SortType.RATING:
+        return displayedFilms.sort((a, b) => b.film_info.total_rating - a.film_info.total_rating);
+      default:
+        return displayedFilms;
+    }
+  }
+
   #renderProfileView() {
     const allFilms = this.#filmsModel.films;
     const prevProfileView = this.#profileView;
     this.#profileView = new ProfileView(filter[FilterType.HISTORY](allFilms).length);
-    if (prevProfileView === null){
+    if (prevProfileView === null) {
       render(this.#profileView, this.#headerContainer);
     } else {
       replace(this.#profileView, prevProfileView);
@@ -92,26 +112,6 @@ export default class MainPresenter {
     filmPresenter.init(film);
 
     this.#filmPresenters.set(film.id, filmPresenter);
-  }
-
-  get films() {
-    this.#filterType = this.#filtersModel.filter;
-
-    const allFilms = this.#filmsModel.films;
-    const filteredFilms = filter[this.#filterType](allFilms);
-    const displayedFilmsCounter = this.#lastPage * PAGE_SIZE;
-    this.#hasNext = filteredFilms.length > displayedFilmsCounter;
-
-    const displayedFilms = filteredFilms.slice(0, displayedFilmsCounter);
-
-    switch (this.#sortType) {
-      case SortType.DATE:
-        return displayedFilms.sort((a, b) => Date.parse(b.film_info.release.date) - Date.parse(a.film_info.release.date));
-      case SortType.RATING:
-        return displayedFilms.sort((a, b) => b.film_info.total_rating - a.film_info.total_rating);
-      default:
-        return displayedFilms;
-    }
   }
 
   #refresh() {

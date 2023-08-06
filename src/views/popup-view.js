@@ -17,7 +17,7 @@ function commentsTemplate(detailedComments) {
       <p class="film-details__comment-info">
         <span class="film-details__comment-author">${comment.author}</span>
         <span class="film-details__comment-day">${dayjs(comment.date).format('YYYY/MM/DD HH:mm')}</span>
-        <button class="film-details__comment-delete" data-comment-id=${comment.id}>${comment.isDeleting ? 'Deleting...' : 'Delete'}</button>
+        <button class="film-details__comment-delete" ${comment.isDeleting ? 'disabled' : ''} data-comment-id=${comment.id}>${comment.isDeleting ? 'Deleting...' : 'Delete'}</button>
       </p>
     </div>
   </li>`).join('');
@@ -225,6 +225,15 @@ export default class PopupView extends AbstractStatefulView {
     });
   };
 
+  updateElement = (state, recoverScroll = true) => {
+    const scroll = this.element.scrollTop;
+    super.updateElement(state);
+
+    if (recoverScroll) {
+      this.element.scrollTop = scroll;
+    }
+  };
+
   #handleCmdEnter = (evt) => {
     if (evt.type === 'keyup' && evt.ctrlKey && evt.keyCode === 13) {
       const form = this.element.querySelector('form');
@@ -295,15 +304,6 @@ export default class PopupView extends AbstractStatefulView {
   #handleFavoriteBtn = (evt) => {
     evt.stopPropagation();
     this.#onFavoriteClick();
-  };
-
-  updateElement = (state, recoverScroll = true) => {
-    const scroll = this.element.scrollTop;
-    super.updateElement(state);
-
-    if (recoverScroll) {
-      this.element.scrollTop = scroll;
-    }
   };
 }
 

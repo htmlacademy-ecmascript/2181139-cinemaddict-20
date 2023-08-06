@@ -15,7 +15,7 @@ export default class FiltersView extends AbstractStatefulView {
   #currentFilterType = null;
   #onFilterTypeChange = null;
 
-  constructor({filters, currentFilterType, onFilterTypeChange}) {
+  constructor({ filters, currentFilterType, onFilterTypeChange }) {
     super();
     this.#filters = filters;
     this.#currentFilterType = currentFilterType;

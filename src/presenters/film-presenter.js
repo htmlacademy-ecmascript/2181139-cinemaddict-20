@@ -8,10 +8,6 @@ const DEFAULT_COMMENT = {
   text: ''
 };
 
-/*
-* FilmView,
-* PopupView
-*/
 export default class FilmPresenter {
   #mode = Mode.GALLERY;
   #container = null;
@@ -57,12 +53,63 @@ export default class FilmPresenter {
     remove(prevPopupView);
   }
 
-  #handlePopupClick = () => {
-    this.#onModeChange(this.#film.id, Mode.POPUP);
+  switchToGallery = () => {
+    remove(this.#popupView);
+    this.#mode = Mode.GALLERY;
+    document.removeEventListener('keyup', this.#handlePopupClose);
   };
+
+  switchToPopup() {
+    render(this.#popupView, document.querySelector('footer'), RenderPosition.AFTEREND);
+    this.#mode = Mode.POPUP;
+    document.addEventListener('keyup', this.#handlePopupClose);
+  }
+
+  handleError(updateType, payload) {
+    switch (updateType) {
+      case UpdateType.WATCHLIST:
+      case UpdateType.HISTORY:
+      case UpdateType.FAVORITE: {
+        if (this.#mode === Mode.POPUP) {
+          this.#popupView.shake(() => {
+          }, '.film-details__controls');
+        } else {
+          this.#filmView.shake(() => { });
+        }
+        break;
+      }
+      case UpdateType.COMMENT_DELETED: {
+        this.#popupView.shake(() => {
+          this.#popupView.setIsDeleting(payload.commentId, false);
+        }, `.film-details__comment:has([data-comment-id="${payload.commentId}"])`);
+        break;
+      }
+      case UpdateType.COMMENT_SUBMITTED: {
+        this.#popupView.shake(() => {
+          this.#popupView.setIsPosting(false);
+        }, '.film-details__new-comment');
+        break;
+      }
+    }
+
+  }
+
+  destroy() {
+    remove(this.#filmView);
+    if (this.#mode === Mode.POPUP) {
+      remove(this.#popupView);
+    }
+  }
 
   resetCommentDraft = () => {
     this.#commentDraft = DEFAULT_COMMENT;
+    this.#popupView.updateElement({
+      comment: DEFAULT_COMMENT
+    });
+  };
+
+  #handlePopupClick = () => {
+    this.#onModeChange(this.#film.id, Mode.POPUP);
   };
 
   #handleFormSubmit = async (comment) => {
@@ -139,50 +186,4 @@ export default class FilmPresenter {
       ...commentDraft
     };
   };
-
-  switchToGallery = () => {
-    remove(this.#popupView);
-    this.#mode = Mode.GALLERY;
-    document.removeEventListener('keyup', this.#handlePopupClose);
-  };
-
-  switchToPopup() {
-    render(this.#popupView, document.querySelector('footer'), RenderPosition.AFTEREND);
-    this.#mode = Mode.POPUP;
-    document.addEventListener('keyup', this.#handlePopupClose);
-  }
-
-  handleError(updateType, payload) {
-    switch (updateType) {
-      case UpdateType.UPDATE_FILM: {
-        if (this.#mode === Mode.POPUP) {
-          this.#popupView.shake(() => {
-          }, '.film-details__controls');
-        } else {
-          this.#filmView.shake(() => { });
-        }
-        break;
-      }
-      case UpdateType.COMMENT_DELETED: {
-        this.#popupView.shake(() => {
-          this.#popupView.setIsDeleting(payload.commentId, false);
-        }, `.film-details__comment:has([data-comment-id="${payload.commentId}"])`);
-        break;
-      }
-      case UpdateType.COMMENT_SUBMITTED: {
-        this.#popupView.shake(() => {
-          this.#popupView.setIsPosting(false);
-        }, '.film-details__new-comment');
-        break;
-      }
-    }
-
-  }
-
-  destroy() {
-    remove(this.#filmView);
-    if (this.#mode === Mode.POPUP) {
-      remove(this.#popupView);
-    }
-  }
 }

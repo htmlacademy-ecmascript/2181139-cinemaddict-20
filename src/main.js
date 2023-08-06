@@ -15,6 +15,6 @@ const mainContainer = document.querySelector('.main');
 const headerContainer = document.querySelector('.header');
 const listContainer = document.querySelector('.films-list__container');
 
-const filtersPresenter = new FiltersPresenter({container: mainContainer, filtersModel, filmsModel});
-const mainPresenter = new MainPresenter({headerContainer, mainContainer, listContainer, filmsModel, filtersModel});
+new FiltersPresenter({ container: mainContainer, filtersModel, filmsModel });
+new MainPresenter({ headerContainer, mainContainer, listContainer, filmsModel, filtersModel });
 

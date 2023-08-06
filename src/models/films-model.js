@@ -5,7 +5,7 @@ export default class FilmsModel extends Observable {
   #films = [];
   #filmsApiService = null;
 
-  constructor(filmsApiService){
+  constructor(filmsApiService) {
     super();
     this.#filmsApiService = filmsApiService;
   }
@@ -23,14 +23,14 @@ export default class FilmsModel extends Observable {
     this._notify(UpdateType.FILMS_LOADED);
   }
 
-  async initComments(movieId) {
-    const index = this.#films.findIndex((film) => film.id === movieId);
+  async initComments(filmId) {
+    const index = this.#films.findIndex((film) => film.id === filmId);
     if (index === -1) {
       throw new Error('Can\'t find unexisting film');
     }
     let updatedFilm = this.#films[index];
     try {
-      const comments = await this.#filmsApiService.fetchComments(movieId);
+      const comments = await this.#filmsApiService.fetchComments(filmId);
       updatedFilm = {
         ...this.#films[index],
         comments: comments.map((comment) => comment.id),
@@ -43,22 +43,20 @@ export default class FilmsModel extends Observable {
       ];
 
     } catch (err) {
-      this.#films = [];
+      throw new Error('Can\'t fetch comments');
     }
     this._notify(UpdateType.COMMENTS_LOADED, updatedFilm);
   }
 
   async update(updateType, updatedFilm) {
-    const payload = { ...updatedFilm };
-    delete payload.detailedComments;
-    const index = this.#films.findIndex((film) => film.id === payload.id);
+    const index = this.#films.findIndex((film) => film.id === updatedFilm.id);
 
     if (index === -1) {
       throw new Error('Can\'t update unexisting film');
     }
 
     try {
-      const response = await this.#filmsApiService.updateFilm(payload);
+      const response = await this.#filmsApiService.updateFilm(updatedFilm);
       const film = { ...response, detailedComments: updatedFilm.detailedComments };
       this.#films = [
         ...this.#films.slice(0, index),
@@ -72,30 +70,30 @@ export default class FilmsModel extends Observable {
   }
 
   async updateComment(updateType, comment) {
-    let updatedFilm;
+    let existingFilm;
     try {
-      const { movie, comments: updatedComments } = await this.#filmsApiService.postComment(comment);
-      const index = this.#films.findIndex((film) => film.id === movie.id);
+      const { movie: updatedFilm, comments: updatedComments } = await this.#filmsApiService.postComment(comment);
+      const index = this.#films.findIndex((film) => film.id === updatedFilm.id);
       if (index === -1) {
         throw new Error('Can\'t find unexisting film');
       }
-      updatedFilm = this.#films[index];
-      updatedFilm = {
+      existingFilm = this.#films[index];
+      existingFilm = {
         ...this.#films[index],
-        ...movie,
+        ...updatedFilm,
         comments: updatedComments.map((c) => c.id),
         detailedComments: updatedComments
       };
       this.#films = [
         ...this.#films.slice(0, index),
-        updatedFilm,
+        existingFilm,
         ...this.#films.slice(index + 1),
       ];
 
     } catch (err) {
       throw new Error('Can\'t post comment');
     }
-    this._notify(updateType, updatedFilm);
+    this._notify(updateType, existingFilm);
   }
 
   async deleteComment(updateType, comment) {

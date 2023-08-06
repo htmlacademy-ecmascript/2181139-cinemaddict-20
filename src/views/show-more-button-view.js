@@ -7,7 +7,7 @@ function showMoreButtonTemplate() {
 export default class ShowMoreButtonView extends AbstractStatefulView {
   #onBtnClick = null;
 
-  constructor(onBtnClick){
+  constructor(onBtnClick) {
     super();
     this.#onBtnClick = onBtnClick;
     this.element.addEventListener('click', this.#handleBtnClick);

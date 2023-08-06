@@ -9,7 +9,7 @@ export default class FiltersPresenter {
   #filmsModel = null;
   #filtersView = null;
 
-  constructor({container, filtersModel, filmsModel}) {
+  constructor({ container, filtersModel, filmsModel }) {
     this.#container = container;
     this.#filmsModel = filmsModel;
     this.#filtersModel = filtersModel;
@@ -28,9 +28,6 @@ export default class FiltersPresenter {
   }
 
   renderFilters() {
-    // if (this.#filmsModel.films.length === 0) {
-    //   return;
-    // }
     const filters = this.filters;
     const prevFiltersView = this.#filtersView;
 
@@ -39,7 +36,7 @@ export default class FiltersPresenter {
       currentFilterType: this.#filtersModel.filter,
       onFilterTypeChange: this.#handleFilterTypeChange
     });
-    if (prevFiltersView === null){
+    if (prevFiltersView === null) {
       render(this.#filtersView, this.#container, RenderPosition.AFTERBEGIN);
       return;
     }

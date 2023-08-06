@@ -2,7 +2,7 @@ import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
 
 function profileTemplate(filmsAmount) {
   let title;
-  if (filmsAmount === 0){
+  if (filmsAmount === 0) {
     title = '';
   } else if (filmsAmount > 0 && filmsAmount <= 10) {
     title = 'novice';
