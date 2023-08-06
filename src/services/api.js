@@ -17,11 +17,16 @@ export default class FilmsApiService extends ApiService{
   }
 
   postComment(comment) {
-    const commentBody = { ...comment };
+    const commentBody = { ...comment, comment: comment.text };
+    delete commentBody.text;
     delete commentBody.filmId;
     delete commentBody.isDeleting;
     return this._load({method: 'POST', url: `cinemaddict/comments/${comment.filmId}`, headers: new Headers({ 'Content-Type': 'application/json'}), body: JSON.stringify(commentBody)})
       .then(ApiService.parseResponse);
+  }
+
+  deleteComment(commentId) {
+    return this._load({method: 'DELETE', url: `cinemaddict/comments/${commentId}`, headers: new Headers({ 'Content-Type': 'application/json'})});
   }
 }
 

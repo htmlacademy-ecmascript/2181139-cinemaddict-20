@@ -17,7 +17,7 @@ const TimeLimit = {
 };
 
 export default class MainPresenter {
-  #filmPresenters = new Map(); // <movieId, FilmPresenter>
+  #filmPresenters = new Map();
   #headerContainer = null;
   #mainContainer = null;
   #listContainer = null;
@@ -147,17 +147,20 @@ export default class MainPresenter {
       switch (userAction) {
         case UserAction.UPDATE_FILM:
           filmId = payload.id;
-          // this.#filmPresenters.get(updatedFilm.id).setSaving();
           await this.#filmsModel.update(updateType, payload);
           break;
         case UserAction.UPDATE_COMMENT:
           filmId = payload.filmId;
-          await this.#filmsModel.updateComment(updateType, payload);
+          if (updateType === UpdateType.COMMENT_SUBMITTED) {
+            await this.#filmsModel.updateComment(updateType, payload);
+            this.#filmPresenters.get(filmId).resetCommentDraft();
+          } else if (updateType === UpdateType.COMMENT_DELETED) {
+            await this.#filmsModel.deleteComment(updateType, payload);
+          }
           break;
       }
     } catch (err) {
-      this.#filmPresenters.get(filmId).handleError();
-      throw err;
+      this.#filmPresenters.get(filmId).handleError(updateType, payload);
     } finally {
       this.#uiBlocker.unblock();
     }
@@ -191,14 +194,12 @@ export default class MainPresenter {
     this.#renderMain();
   };
 
-  // updateType: userData changes/comments changes
   #handleFilmsModelEvent = (updateType, film) => {
     let filmPresenter;
     switch (updateType) {
       case UpdateType.FAVORITE:
         filmPresenter = this.#filmPresenters.get(film.id);
         if (this.#filtersModel.filter === FilterType.FAVORITE && !film.user_details.favorite) {
-          // filmPresenter.destroy();
           this.#removeFilm(filmPresenter);
         } else {
           filmPresenter.init(film);
@@ -235,6 +236,8 @@ export default class MainPresenter {
         break;
 
       case UpdateType.COMMENTS_LOADED:
+      case UpdateType.COMMENT_DELETED:
+      case UpdateType.COMMENT_SUBMITTED:
         filmPresenter = this.#filmPresenters.get(film.id);
         filmPresenter.init(film);
         break;
@@ -242,15 +245,6 @@ export default class MainPresenter {
   };
 
   #handleFiltersModelEvent = () => {
-    // switch (updateType) {
-    //   case UpdateType.PATCH:
-    //   case UpdateType.MINOR:
-    //   case UpdateType.MAJOR:
-    //     this.#clearBoard({ resetSorting: true });
-    //     this.#renderBoard();
-    //     break;
-    // }
-    // this.#filmsModel.resetPage();
     this.#lastPage = 1;
     this.#sortType = SortType.DEFAULT;
     this.#clearBoard();

@@ -59,13 +59,13 @@ export default class FilmsModel extends Observable {
 
     try {
       const response = await this.#filmsApiService.updateFilm(payload);
-      // const point = this.#ApiService.transformPointForClient(response);
+      const film = { ...response, detailedComments: updatedFilm.detailedComments };
       this.#films = [
         ...this.#films.slice(0, index),
-        response,
+        film,
         ...this.#films.slice(index + 1),
       ];
-      this._notify(updateType, { ...response, detailedComments: updatedFilm.detailedComments });
+      this._notify(updateType, film);
     } catch (err) {
       throw new Error('Can\'t update film');
     }
@@ -93,8 +93,32 @@ export default class FilmsModel extends Observable {
       ];
 
     } catch (err) {
-      this.#films = [];
+      throw new Error('Can\'t post comment');
     }
-    this._notify(UpdateType.COMMENTS_LOADED, updatedFilm);
+    this._notify(updateType, updatedFilm);
+  }
+
+  async deleteComment(updateType, comment) {
+    let updatedFilm;
+    try {
+      await this.#filmsApiService.deleteComment(comment.commentId);
+      const index = this.#films.findIndex((film) => film.id === comment.filmId);
+      if (index === -1) {
+        throw new Error('Can\'t find unexisting film');
+      }
+      updatedFilm = this.#films[index];
+      updatedFilm.comments = updatedFilm.comments.filter((c) => c !== comment.commentId);
+      updatedFilm.detailedComments = updatedFilm.detailedComments.filter((c) => c.id !== comment.commentId);
+
+      this.#films = [
+        ...this.#films.slice(0, index),
+        updatedFilm,
+        ...this.#films.slice(index + 1),
+      ];
+
+    } catch (err) {
+      throw new Error('Can\'t delete comment');
+    }
+    this._notify(updateType, updatedFilm);
   }
 }

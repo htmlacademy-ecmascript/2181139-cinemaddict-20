@@ -17,7 +17,7 @@ function commentsTemplate(detailedComments) {
       <p class="film-details__comment-info">
         <span class="film-details__comment-author">${comment.author}</span>
         <span class="film-details__comment-day">${dayjs(comment.date).format('YYYY/MM/DD HH:mm')}</span>
-        <button class="film-details__comment-delete">Delete</button>
+        <button class="film-details__comment-delete" data-comment-id=${comment.id}>${comment.isDeleting ? 'Deleting...' : 'Delete'}</button>
       </p>
     </div>
   </li>`).join('');
@@ -25,8 +25,9 @@ function commentsTemplate(detailedComments) {
   return `<ul class="film-details__comments-list">${comments}</ul>`;
 }
 
-function popupTemplate(film, state) {
+function popupTemplate(state) {
   let popupComments = null;
+  const { film, comment } = state;
   if (!film.comments || film.comments.length === 0) {
     popupComments = '0 comments';
   } else if (film.comments.length === 1) {
@@ -95,8 +96,7 @@ function popupTemplate(film, state) {
             <tr class="film-details__row">
               <td class="film-details__term">${genresAmount}</td>
               <td class="film-details__cell">
-              ${genres.map((genre) =>
-    `<span class="film-details__genre">${genre}</span>`)}</td>
+              ${genres.map((genre) => `<span class="film-details__genre">${genre}</span>`)}</td>
             </tr>
           </table>
 
@@ -116,33 +116,33 @@ function popupTemplate(film, state) {
     <div class="film-details__bottom-container">
       <section class="film-details__comments-wrap">
         <h3 class="film-details__comments-title"><span class="film-details__comments-count">${popupComments}</span></h3>
-        ${commentsTemplate(film.detailedComments)}
+        ${commentsTemplate(film.detailedComments, comment)}
 
         <form class="film-details__new-comment" action="" method="get">
-          <div class="film-details__add-emoji-label">${state.emotion ? `<img src="./images/emoji/${state.emotion}.png" width="30" height="30" alt="emoji">` : ''}
+          <div class="film-details__add-emoji-label">${comment.emotion ? `<img src="./images/emoji/${comment.emotion}.png" width="30" height="30" alt="emoji">` : ''}
           </div>
 
           <label class="film-details__comment-label">
-            <textarea class="film-details__comment-input" placeholder="Select reaction below and write comment here" name="comment">${state.comment ? state.comment : ''}</textarea>
+            <textarea class="film-details__comment-input" ${state.isPosting ? 'disabled' : ''} placeholder="Select reaction below and write comment here" name="comment" value="${comment.text ? comment.text : ''}">${comment.text ? comment.text : ''}</textarea>
           </label>
 
           <div class="film-details__emoji-list">
-            <input class="film-details__emoji-item visually-hidden" name="comment-emoji" type="radio" id="emoji-smile" value="smile">
+            <input class="film-details__emoji-item visually-hidden" ${state.isPosting ? 'disabled' : ''} name="comment-emoji" type="radio" id="emoji-smile" value="smile">
             <label class="film-details__emoji-label" for="emoji-smile">
               <img src="./images/emoji/smile.png" width="30" height="30" alt="emoji">
             </label>
 
-            <input class="film-details__emoji-item visually-hidden" name="comment-emoji" type="radio" id="emoji-sleeping" value="sleeping">
+            <input class="film-details__emoji-item visually-hidden" ${state.isPosting ? 'disabled' : ''} name="comment-emoji" type="radio" id="emoji-sleeping" value="sleeping">
             <label class="film-details__emoji-label" for="emoji-sleeping">
               <img src="./images/emoji/sleeping.png" width="30" height="30" alt="emoji">
             </label>
 
-            <input class="film-details__emoji-item visually-hidden" name="comment-emoji" type="radio" id="emoji-puke" value="puke">
+            <input class="film-details__emoji-item visually-hidden" ${state.isPosting ? 'disabled' : ''} name="comment-emoji" type="radio" id="emoji-puke" value="puke">
             <label class="film-details__emoji-label" for="emoji-puke">
               <img src="./images/emoji/puke.png" width="30" height="30" alt="emoji">
             </label>
 
-            <input class="film-details__emoji-item visually-hidden" name="comment-emoji" type="radio" id="emoji-angry" value="angry">
+            <input class="film-details__emoji-item visually-hidden" ${state.isPosting ? 'disabled' : ''} name="comment-emoji" type="radio" id="emoji-angry" value="angry">
             <label class="film-details__emoji-label" for="emoji-angry">
               <img src="./images/emoji/angry.png" width="30" height="30" alt="emoji">
             </label>
@@ -155,29 +155,33 @@ function popupTemplate(film, state) {
 }
 
 export default class PopupView extends AbstractStatefulView {
-  #film = null;
   #onCloseBtnClick = null;
   #onWatchlistClick = null;
   #onWatchedClick = null;
   #onFavoriteClick = null;
   #handleFormSubmit = null;
+  #handleCommentDelete = null;
+  #handleCommentDraft = null;
 
-  constructor({ film, onCloseBtnClick, onWatchlistClick, onWatchedClick, onFavoriteClick, onFormSubmit }) {
+  constructor({ film, commentDraft, onCloseBtnClick, onWatchlistClick, onWatchedClick, onFavoriteClick, onCommentDraft, onFormSubmit, onCommentDelete }) {
     super();
-    this.#film = film;
     this.#onCloseBtnClick = onCloseBtnClick;
     this.#onWatchlistClick = onWatchlistClick;
     this.#onWatchedClick = onWatchedClick;
     this.#onFavoriteClick = onFavoriteClick;
     this.#handleFormSubmit = onFormSubmit;
+    this.#handleCommentDelete = onCommentDelete;
+    this.#handleCommentDraft = onCommentDraft;
+    this._setState({
+      film,
+      comment: commentDraft,
+      isPosting: false
+    });
     this._restoreHandlers();
-    this._state = {
-      isDeleting: false
-    };
   }
 
   get template() {
-    return popupTemplate(this.#film, this._state);
+    return popupTemplate(this._state);
   }
 
   _restoreHandlers() {
@@ -187,52 +191,89 @@ export default class PopupView extends AbstractStatefulView {
     this.element.querySelector('.film-details__control-button--favorite').addEventListener('click', this.#handleFavoriteBtn);
     this.element.querySelector('form').addEventListener('change', this.#handleFormChange);
     this.element.querySelector('.film-details__comment-input').addEventListener('keyup', this.#handleCmdEnter);
-    // this.element.querySelector('form').addEventListener('submit', (evt) => {
-    //   evt.preventDefault();
-    //   // delete this._state.isDeleting;
-    //   // delete this._state.isSaving;
-
-    //   this.#handleFormSubmit(this._state);
-    // });
+    for (const deleteBtn of this.element.querySelectorAll('.film-details__comment-delete')) {
+      deleteBtn.addEventListener('click', (evt) => {
+        const commentId = evt.target.dataset.commentId;
+        this.setIsDeleting(commentId, true);
+        this.#handleCommentDelete(commentId);
+      });
+    }
   }
 
+  setIsDeleting = (commentId, isDeleting) => {
+    const commentIndex = this._state.film.detailedComments.findIndex((c) => c.id === commentId);
+    const detailedComments = [
+      ...this._state.film.detailedComments.slice(0, commentIndex),
+      {
+        ...this._state.film.detailedComments[commentIndex],
+        isDeleting
+      },
+      ...this._state.film.detailedComments.slice(commentIndex + 1),
+    ];
+    this.updateElement({
+      ...this._state,
+      film: {
+        ...this._state.film,
+        detailedComments
+      }
+    });
+  };
+
+  setIsPosting = (isPosting) => {
+    this.updateElement({
+      isPosting
+    });
+  };
+
   #handleCmdEnter = (evt) => {
-    if (!this._state.emotion) {
-      return;
-    }
-    if (evt.type === 'keyup' && evt.returnValue && evt.key === 'Meta') {
+    if (evt.type === 'keyup' && evt.ctrlKey && evt.keyCode === 13) {
       const form = this.element.querySelector('form');
       const formData = new FormData(form);
-      const comment = formData.get('comment');
-      this._setState({
+      const commentText = formData.get('comment');
+      if (commentText.trim() === '') {
+        return;
+      }
+      const comment = {
+        ...this._state.comment,
+        text: commentText
+      };
+      this.#handleCommentDraft(comment);
+      this.updateElement({
+        isPosting: true,
         comment
       });
-      // form.submit();
-      this.#handleFormSubmit(this._state);
+      this.#handleFormSubmit(comment);
     }
   };
 
   #handleFormChange = (evt) => {
     evt.preventDefault();
-    const form = this.element.querySelector('form');
-    const formData = new FormData(form);
-    const emotion = formData.get('comment-emoji');
-    const comment = formData.get('comment');
 
-    if (this._state.emotion === emotion) {
-      this._setState({
-        comment
-      });
+    if (evt.target.type === 'textarea') {
+      const text = evt.target.value;
+      const comment = {
+        ...this._state.comment,
+        text
+      };
+      this._setState({ comment });
+      this.#handleCommentDraft(comment);
       return;
     }
 
-    const scroll = this.element.scrollTop;
-    this.updateElement({
-      ...this._state,
-      emotion,
-      comment
-    });
-    this.element.scrollTop = scroll;
+    if (evt.target.name === 'comment-emoji') {
+      const form = this.element.querySelector('form');
+      const formData = new FormData(form);
+      const emotion = formData.get('comment-emoji');
+      const text = formData.get('comment');
+      this.updateElement({
+        ...this._state,
+        comment: {
+          ...this._state.comment,
+          emotion,
+          text
+        }
+      });
+    }
   };
 
   #handleCloseBtnClick = (evt) => {
@@ -254,6 +295,15 @@ export default class PopupView extends AbstractStatefulView {
   #handleFavoriteBtn = (evt) => {
     evt.stopPropagation();
     this.#onFavoriteClick();
+  };
+
+  updateElement = (state, recoverScroll = true) => {
+    const scroll = this.element.scrollTop;
+    super.updateElement(state);
+
+    if (recoverScroll) {
+      this.element.scrollTop = scroll;
+    }
   };
 }
 
