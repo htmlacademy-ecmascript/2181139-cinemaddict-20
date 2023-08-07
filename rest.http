@@ -1,0 +1,14 @@
+### films
+GET /cinemaddict/movies HTTP/1.1
+Host: 20.ecmascript.pages.academy
+Authorization: Basic eo0w590ik275679a
+
+### comments
+GET /cinemaddict/comments/0
+Host: 20.ecmascript.pages.academy
+Authorization: Basic eo0w590ik275679a
+
+### delete comment
+DELETE /cinemaddict/comments/0
+Host: 20.ecmascript.pages.academy
+Authorization: Basic eo0w590ik275679a
