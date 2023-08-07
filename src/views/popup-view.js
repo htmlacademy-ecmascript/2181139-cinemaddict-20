@@ -2,6 +2,7 @@ import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
 import dayjs from 'dayjs';
 import durationModule from 'dayjs/plugin/duration.js';
 import { calcDuration } from './film-view.js';
+import he from 'he';
 dayjs.extend(durationModule);
 
 function commentsTemplate(detailedComments) {
@@ -13,9 +14,9 @@ function commentsTemplate(detailedComments) {
       <img src="./images/emoji/${comment.emotion}.png" width="55" height="55" alt="emoji-smile">
     </span>
     <div>
-      <p class="film-details__comment-text">${comment.comment}</p>
+      <p class="film-details__comment-text">${he.encode(comment.comment)}</p>
       <p class="film-details__comment-info">
-        <span class="film-details__comment-author">${comment.author}</span>
+        <span class="film-details__comment-author">${he.encode(comment.author)}</span>
         <span class="film-details__comment-day">${dayjs(comment.date).format('YYYY/MM/DD HH:mm')}</span>
         <button class="film-details__comment-delete" ${comment.isDeleting ? 'disabled' : ''} data-comment-id=${comment.id}>${comment.isDeleting ? 'Deleting...' : 'Delete'}</button>
       </p>
@@ -123,7 +124,7 @@ function popupTemplate(state) {
           </div>
 
           <label class="film-details__comment-label">
-            <textarea class="film-details__comment-input" ${state.isPosting ? 'disabled' : ''} placeholder="Select reaction below and write comment here" name="comment" value="${comment.text ? comment.text : ''}">${comment.text ? comment.text : ''}</textarea>
+            <textarea class="film-details__comment-input" ${state.isPosting ? 'disabled' : ''} placeholder="Select reaction below and write comment here" name="comment">${comment.text ? he.encode(comment.text) : ''}</textarea>
           </label>
 
           <div class="film-details__emoji-list">

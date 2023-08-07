@@ -104,6 +104,7 @@ export default class FilmsModel extends Observable {
       if (index === -1) {
         throw new Error('Can\'t find unexisting film');
       }
+
       updatedFilm = this.#films[index];
       updatedFilm.comments = updatedFilm.comments.filter((c) => c !== comment.commentId);
       updatedFilm.detailedComments = updatedFilm.detailedComments.filter((c) => c.id !== comment.commentId);
@@ -113,7 +114,6 @@ export default class FilmsModel extends Observable {
         updatedFilm,
         ...this.#films.slice(index + 1),
       ];
-
     } catch (err) {
       throw new Error('Can\'t delete comment');
     }

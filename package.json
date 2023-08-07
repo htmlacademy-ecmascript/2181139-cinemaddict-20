@@ -33,6 +33,7 @@
     "node": "18"
   },
   "dependencies": {
+    "he": "1.2.0",
     "dayjs": "1.11.7"
   }
 }
